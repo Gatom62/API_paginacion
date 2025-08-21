@@ -2,12 +2,14 @@ package IntegracionBackFront.backfront.Services.Cloudinary;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.apache.tomcat.util.net.jsse.PEMFile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class CloudinaryService {
@@ -34,6 +36,32 @@ public class CloudinaryService {
                         "resource_type", "auto",
                         "quality", "auto:good"
                 ));
+        return (String) uploadResult.get("secure_url");
+    }
+
+    public String uploadImage(MultipartFile file, String folder)throws IOException{
+        //Mandamos a llamar el metodo que no ayuda a validar las imagenes
+        validateImage(file);
+
+        //Hacemos que proteja
+        String originalFilename = file.getOriginalFilename();
+        String fileExtensions = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+
+        //Renombramos la imagen para poder proteger el sistema
+        String uniqueFilename = "img_" + UUID.randomUUID() + fileExtensions;
+
+        Map<String, Object> options = ObjectUtils.asMap(
+                "folder", folder,   //Carpeta de destino
+                "public_id", uniqueFilename, //Nombre unico para el archivo
+                "use_filename", false, //No usar el nombre original
+                "unique_filename", false, //No genera nombre unico (ya lo hicimos)
+                "overwrite", false, //Para no sobreescribir archivos exsistentes
+                "resource_type", "auto",
+                "quality", "auto:good"
+        );
+
+        Map<?,?> uploadResult = cloudinary.uploader().upload(file.getBytes(), options);
+
         return (String) uploadResult.get("secure_url");
     }
 
